@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>地图分区</title>
+		<meta name="description" content="地图分区">
+		<meta name="keywords" content="你好，我是Sign">
+		<style>
+			body {
+				margin:0;
+				padding:0;
+				border:0;
+				outline:0;
+				font:14px/1.5em "微软雅黑",microsoft yahei,SimHei,sans-serif;
+				background:#efefef
+			}
+			#stage {
+				width:100%;
+				overflow:hidden
+			}
+			#front {
+				-webkit-transition:0.3s;
+				-moz-transition:0.3s;
+				transition:0.3s;
+				position:relative;
+			}
+			#front .wrap {
+				width:100%;
+				height:100%;
+				background: #f90;
+			}
+			#front .item {
+				position:absolute;
+				overflow:hidden;
+				border:1px solid #9fc;
+				box-sizing: border-box;
+				padding: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="main">
+			<div id="front"></div>
+		</div>
+		<!-- tpl -->
+		<script type="text/template" id="card-tpl">
+			<div class="item {#box}" style="top:{#top}px;left:{#left}px;width:{#width}px;height:{#height}px;">
+				<div class="wrap">
+				</div>
+			</div>
+		</script>
+
+		<script type="text/javascript">
+
+			var json = [{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}];
+
+		/******sidebar*****/
+			/*$stage = $("#stage");
+			$sidebar = $("#sidebar");
+			$sidebar.find('.menu .icon').click(function(event) {
+				$stage.toggleClass('expand');
+			});*/
+
+		/******layout******/
+			//ie7-
+			var isIE = document.all && !document.querySelector;
+
+			var metro = function(){
+				//json对应变量
+				this.json_card = {};
+				this.json_card_mark = 0;
+				this.json_card_num = 20;
+				this.ajax_lock = 0;
+
+				//地图分区布局变量
+				this.box = [];
+				this.row = 0;
+				this.col = 9;
+				this.box_h = this.box_w = 150;
+				this.gap = 5
+			}
+			metro.prototype.init = function(){
+				//jq dom
+				var $main = document.querySelector('#main');
+				var $card_tpl = document.querySelector("#card-tpl");
+				//resize 记录main_w
+				var stage_w = $main.offsetWidth;
+				this.main_w = stage_w;
+				//更新公共变量
+				var col = (stage_w / 200 | 0);	//200是根据最大屏col为9计算出来
+				this.col = col < 2 ? 2 : col;	//min-col: 2
+				this.row = 0;
+				this.box = [];
+				this.box_h = this.box_w = this.main_w / this.col;
+				this.card_tpl = $card_tpl.innerHTML;
+
+				// this.addCards("resize", this.json_card);
+			}
+			metro.prototype.addCards = function(mode, json){
+				var $main = document.querySelector('#front');
+				//this.row 将会在boxHtml内的packing更新
+				var card_html = boxHtml(this.row, this.card_tpl, json);
+
+				var row = this.box[this.row+1] ? this.row + 2 : this.row + 1;
+				//main_h需要随时变化
+				var main_w = this.main_w;
+				var main_h = this.box_h * row;
+				$main.offsetWidth = main_w;
+				$main.offsetHeight = main_h;
+				switch(mode){
+					case "init":
+					case "resize":
+						$main.innerHTML = card_html;
+						break;
+					case "add":
+						$main.appendChild(card_html);
+						break;
+				}
+			}
+			metro.prototype.loadCards = function(mode){
+				var _this = this;
+				var mark = this.json_card_mark;
+				var num = this.json_card_num;
+				front.addCards(mode, json);
+			}
+
+			var front = new metro();
+				front.init();
+				front.loadCards("init");
+
+			if(!isIE){
+				//ie7- 直接禁用了
+				// $(window).resize(function(){
+					front.init();
+					front.loadCards("resize");
+				// });
+			}
+
+			/*$(window).scroll(function() {
+				if($(this).scrollTop() >= $(document).height() - $(window).height()){
+					front.loadCards("add");
+					// if(get_more){
+					// }
+				}
+			});*/
+
+			function genBox(mode, json){
+				switch(mode){
+					case "rand":
+						//生成随机方块
+						var rand = Math.random();
+						json["box"] = "b1";
+						// (rand < 0.5) && (json["box"] = "b2");
+						(rand < 0.2) && (json["box"] = "b3");
+						break;
+				}
+			}
+
+			function boxHtml(row, tpl, json){
+				//生成方块html
+				var html = "";
+				var box = front.box;
+				for (var i = 0, len = json.length; i < len; i++) {
+					genBox("rand", json[i]);
+					var data = packing(row, box, json[i]);
+					html += tplEngine(tpl, data);
+				}
+				return html;
+			}
+
+			function packing(x, box, json){
+				/***
+				x: row 起始行
+				box: 分区总盒子
+				json: 需要拼装的数据
+				***/
+				//拼装json位置
+				var packed = 0;
+				var w = 1,
+					h = 1;
+				while(!packed){
+					box[x] = box[x] || [];
+					for (var y = 0, len_y = front.col; y < len_y; y++) {
+						switch (json.box) {
+							case "b1":
+								if (!box[x][y]){
+									packed = 1;
+									box[x][y] = 1;
+								}
+							break;
+							case "b2":
+								if (y < len_y - 1){
+									if (!box[x][y] && !box[x][y+1]) {
+										packed = 1;
+										box[x][y+1] = 1;
+										box[x][y] = 1;
+										w = 2;
+									}
+								}
+							break;
+							case "b3":
+								if (y < len_y - 1){
+									box[x+1] = box[x+1] || [];
+									if (!box[x][y] && !box[x][y+1] && !box[x+1][y] && !box[x+1][y+1]) {
+										packed = 1;
+										box[x][y+1] = 1;
+										box[x+1][y] = 1;
+										box[x+1][y+1] = 1;
+										box[x][y] = 1;
+										w = 2;
+										h = 2;
+									}
+								}
+							break;
+						}
+						//全局计数器
+						//记录当前总行数，用于添加新的数据
+						front.row = x;
+						front.box = box;
+						if(packed){
+							json.top = front.box_h * x;
+							json.left = front.box_w * y;
+							json.width = front.box_w * w;
+							json.height = front.box_h * h;
+							return json;
+						}
+					}
+					x++;
+				}
+			}
+
+			function tplEngine(tpl, data) {
+				var re = /{#(\w+)?}/;
+				while(match = re.exec(tpl)) {
+					tpl = tpl.replace(match[0],data[match[1]]);
+				}
+				return tpl;
+			}
+
+		</script>
+	</body>
+</html>
