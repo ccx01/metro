@@ -135,7 +135,6 @@
 					}
 					return html;
 				}
-
 				metro.prototype.packing = function(x, box, json){
 					/***
 					x: row 起始行
@@ -199,8 +198,10 @@
 							}
 							//全局计数器
 							//记录当前总行数，用于添加新的数据
-							this.row = x;
 							this.box = box;
+							if(y == len_y - 1){
+								this.row = x;
+							}
 							if(packed){
 								json.top = this.box_h * x;
 								json.left = this.box_w * y;
@@ -210,6 +211,20 @@
 							}
 						}
 						x++;
+					}
+				}
+
+
+				function genBox(mode, json){
+					switch(mode){
+						case "rand":
+							//生成随机方块
+							var rand = Math.random();
+							json["box"] = "b1";
+							(rand < 0.6) && (json["box"] = "b2");
+							(rand < 0.3) && (json["box"] = "b3");
+							(rand < 0.1) && (json["box"] = "b4");
+							break;
 					}
 				}
 
@@ -229,20 +244,6 @@
 						i++;
 					}
 					this.appendChild(fragment);
-				}
-
-
-				function genBox(mode, json){
-					switch(mode){
-						case "rand":
-							//生成随机方块
-							var rand = Math.random();
-							json["box"] = "b1";
-							(rand < 0.6) && (json["box"] = "b2");
-							(rand < 0.3) && (json["box"] = "b3");
-							(rand < 0.1) && (json["box"] = "b4");
-							break;
-					}
 				}
 
 				function tplEngine(tpl, data) {
