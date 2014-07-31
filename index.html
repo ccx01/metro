@@ -32,13 +32,31 @@
 				background: #f90;
 			}
 			.b1 .wrap {
-				background: #ccc;
+				background: #f9c;
 			}
 			.b2 .wrap {
-				background: #cf9;
+				background: #fc9;
 			}
 			.b3 .wrap {
+				background: #9fc;
+			}
+			.b4 .wrap {
 				background: #9cf;
+			}
+			.b5 .wrap {
+				background: #cf9;
+			}
+			.b6 .wrap {
+				background: #c9f;
+			}
+			.b7 .wrap {
+				background: #9f0;
+			}
+			.b8 .wrap {
+				background: #90f;
+			}
+			.b9 .wrap {
+				background: #f90;
 			}
 			.item {
 				position:absolute;
@@ -87,7 +105,7 @@
 				//ie7-
 				// var isIE = document.all && !document.querySelector;
 
-				window.metro = function(col, container, tpl){
+				var metro = function(col, container, tpl){
 					//地图分区布局变量
 					/*
 						box: 地图分区数组
@@ -96,7 +114,9 @@
 						container: metro容器
 						tpl: 用来拼装json的模板
 					*/
+					this.grid = [];
 					this.box = [];
+					this.missing = [];
 					this.row = 0;
 					this.col = col || 9;
 					this.container = container || document.querySelector('body');
@@ -140,80 +160,79 @@
 					x: row 起始行
 					box: 分区总盒子
 					json: 需要拼装的数据
-
-					b1: 1x1 方格
-					b2: 2x1 方格
-					b3: 1x2 方格
-					b4: 2x2 方格
 					***/
 					//拼装json位置
-					var packed = 0;
-					var w = 1,
-						h = 1;
+					var packed;
+					var grid = this.grid[json.box];
 					while(!packed){
 						box[x] = box[x] || [];
-						for (var y = 0, len_y = this.col; y < len_y; y++) {
-							switch (json.box) {
-								case "b1":
-									if (!box[x][y]){
-										packed = 1;
-										box[x][y] = 1;
-									}
-								break;
-								case "b2":
-									if (y < len_y - 1){
-										if (!box[x][y] && !box[x][y+1]) {
-											packed = 1;
-											box[x][y+1] = 1;
-											box[x][y] = 1;
-											w = 2;
+						for (var y = 0; y < this.col; y++) {
+							packed = 1;
+							if (y > (this.col - grid.w)){
+								packed = 0;
+							}else{
+								for(var i = 0; i < grid.h; i++){
+									box[x+i] = box[x+i] || [];
+									for(var j = 0; j < grid.w; j++){
+										if(box[x+i][y+j]){
+											packed = 0;
 										}
 									}
-								break;
-								case "b3":
-									if (y < len_y - 1){
-										box[x+1] = box[x+1] || [];
-										if (!box[x][y] && !box[x+1][y]) {
-											packed = 1;
-											box[x+1][y] = 1;
-											box[x][y] = 1;
-											h = 2;
-										}
-									}
-								break;
-								case "b4":
-									if (y < len_y - 1){
-										box[x+1] = box[x+1] || [];
-										if (!box[x][y] && !box[x][y+1] && !box[x+1][y] && !box[x+1][y+1]) {
-											packed = 1;
-											box[x][y+1] = 1;
-											box[x+1][y] = 1;
-											box[x+1][y+1] = 1;
-											box[x][y] = 1;
-											w = 2;
-											h = 2;
-										}
-									}
-								break;
+								}
 							}
-							//全局计数器
-							//记录当前总行数，用于添加新的数据
+
 							this.box = box;
-							if(y == len_y - 1){
-								this.row = x;
-							}
 							if(packed){
+								for(var i = 0; i < grid.h; i++){
+									for(var j = 0; j < grid.w; j++){
+										box[x+i][y+j] = 1;
+									}
+								}
 								json.top = this.box_h * x;
 								json.left = this.box_w * y;
-								json.width = this.box_w * w;
-								json.height = this.box_h * h;
+								json.width = this.box_w * grid.w;
+								json.height = this.box_h * grid.h;
 								return json;
+							}
+							(!box[x][y]) && (this.missing[x] = y);
+						}
+
+						for(var m = this.row, len = this.missing.length; m < len; m++){
+							if(this.missing[m] && !box[m][this.missing[m]]){
+								this.row = m;
+								break;
 							}
 						}
 						x++;
 					}
 				}
-
+				metro.prototype.defineBox = function(name, w, h){
+					this.grid[name] = {
+						w: w,
+						h: h
+					}
+				}
+				function setBox(grid, box, x, y, col){
+					var w = grid.w - 1;
+					var h = grid.h;
+					var ret_box;
+					if(y < (col - w)){
+						var getBox = true;
+						for(var i = 0; i < h; i++){
+							box[x+i] = box[x+i] || [];
+							for(var j = 0; j < w; j++){
+								if(box[x+i][y+j]){
+									getBox = false;
+									break;
+								}else{
+									box[x+i][y+j] = 1;
+								}
+							}
+						}
+						getBox && (ret_box = box);
+					}
+					return ret_box;
+				}
 
 				function genBox(mode, json){
 					switch(mode){
@@ -221,9 +240,15 @@
 							//生成随机方块
 							var rand = Math.random();
 							json["box"] = "b1";
-							(rand < 0.6) && (json["box"] = "b2");
-							(rand < 0.3) && (json["box"] = "b3");
-							(rand < 0.1) && (json["box"] = "b4");
+							(rand < 0.9) && (json["box"] = "b2");
+							(rand < 0.8) && (json["box"] = "b3");
+							(rand < 0.7) && (json["box"] = "b4");
+							(rand < 0.6) && (json["box"] = "b5");
+							(rand < 0.5) && (json["box"] = "b6");
+							(rand < 0.4) && (json["box"] = "b7");
+							(rand < 0.3) && (json["box"] = "b8");
+							(rand < 0.2) && (json["box"] = "b9");
+							(rand < 0.1) && (json["box"] = "b1");
 							break;
 					}
 				}
@@ -254,14 +279,26 @@
 					return tpl;
 				}
 
+				window.metro = metro;
+
 			}());
 
 
 			var json = [{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}];
+			// var json = [{},{}];
 			var container = document.querySelector('#front');
 			var tpl = document.querySelector("#card-tpl").innerHTML;
-			var front = new metro(15, container, tpl);
+			var front = new metro(25, container, tpl);
 				front.init();
+				front.defineBox("b1", 1, 1);
+				front.defineBox("b2", 2, 1);
+				front.defineBox("b3", 1, 2);
+				front.defineBox("b4", 2, 2);
+				front.defineBox("b5", 1, 3);
+				front.defineBox("b6", 2, 3);
+				front.defineBox("b7", 3, 3);
+				front.defineBox("b8", 3, 1);
+				front.defineBox("b9", 3, 2);
 				front.loadCards("resize", json);
 
 			document.querySelector("#resize").onclick = function(){
