@@ -115,28 +115,17 @@
 						tpl: 用来拼装json的模板
 					*/
 					this.grid = {
-						b1: {
-							w: 1,
-							h: 1
-						},
-						b2: {
-							w: 2,
-							h: 1
-						},
-						b3: {
-							w: 1,
-							h: 2
-						},
-						b4: {
-							w: 2,
-							h: 2
-						}
+						b1: {w: 1, h: 1},
+						b2: {w: 2, h: 1},
+						b3: {w: 1, h: 2},
+						b4: {w: 2, h: 2}
 					};
 					this.box = [];
 					this.row = 0;
-					this.col = col || 9;
+					this.col = Math.max((col || 9), 2);
 					this.container = container || document.querySelector('body');
 					this.tpl = tpl || document.querySelector("#card-tpl").innerHTML;
+					this.box_h = this.box_w = this.container.offsetWidth / this.col;
 				}
 				metro.prototype.init = function(){
 					this.stage_w = this.container.offsetWidth;
@@ -145,19 +134,23 @@
 					this.row = 0;
 					this.box = [];
 					this.box_h = this.box_w = this.stage_w / this.col;
+					this.container.innerHTML = '';
 				}
 				metro.prototype.loadCards = function(mode, json){
-					//this.row 将会在boxHtml内的packing更新
-					var card_html = this.boxHtml(this.row, this.tpl, json);
+					
 					switch(mode){
 						case "resize":
-							this.container.innerHTML = card_html;
+							this.init();
 							break;
-						case "add":
+						/*case "add":
 							// this.container.insertAdjacentHTML('afterend', card_html);
-							this.container.appendHTML(card_html);
-							break;
+							// this.container.appendHTML(card_html);
+							break;*/
 					}
+					var card_html = this.boxHtml(this.row, this.tpl, json);
+						this.container.appendHTML(card_html);
+						this.row = this.missingBox() || this.row;
+					// console.log(this.row)
 				}
 				metro.prototype.boxHtml = function(row, tpl, json){
 					//生成方块html
@@ -169,9 +162,6 @@
 						data = this.packing(row, box, json[i]);
 						html += tplEngine(tpl, data);
 					}
-
-					this.row = this.missingBox() || this.row;
-					// console.log(this.row)
 					return html;
 				}
 				metro.prototype.packing = function(x, box, json){
@@ -289,7 +279,7 @@
 			var container = document.querySelector('#front');
 			var tpl = document.querySelector("#card-tpl").innerHTML;
 			var front = new metro(25, container, tpl);
-				front.init();
+				// front.init();
 				/*front.defineBox("b1", 1, 1);
 				front.defineBox("b2", 2, 1);
 				front.defineBox("b3", 1, 2);
@@ -302,7 +292,6 @@
 				front.loadCards("resize", json);
 
 			document.querySelector("#resize").onclick = function(){
-				front.init();
 				front.loadCards("resize", json);
 			}
 			document.querySelector("#add").onclick = function(){
