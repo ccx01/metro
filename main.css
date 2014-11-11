@@ -1,0 +1,73 @@
+body {
+	margin:0;
+	padding:0;
+	border:0;
+	outline:0;
+	font:14px/1.5em "微软雅黑",microsoft yahei,SimHei,sans-serif;
+	background: rgba(0, 0, 0, 0.8);
+}
+#stage {
+	width:100%;
+	overflow:hidden
+}
+#front {
+	margin-right: 20px;
+	-webkit-transition:0.3s;
+	-moz-transition:0.3s;
+	transition:0.3s;
+	position:relative;
+}
+.wrap {
+	width:100%;
+	height:100%;
+	background: #f90;
+}
+.b1 .wrap {
+	background: #f9c;
+}
+.b2 .wrap {
+	background: #fc9;
+}
+.b3 .wrap {
+	background: #9fc;
+}
+.b4 .wrap {
+	background: #9cf;
+}
+.b5 .wrap {
+	background: #cf9;
+}
+.b6 .wrap {
+	background: #c9f;
+}
+.b7 .wrap {
+	background: #9f0;
+}
+.b8 .wrap {
+	background: #90f;
+}
+.b9 .wrap {
+	background: #f90;
+}
+.item {
+	position:absolute;
+	overflow:hidden;
+	border:1px solid #9fc;
+	box-sizing: border-box;
+	padding: 5px;
+	opacity: 0.3;
+}
+#navi {
+	position: fixed;
+	top: 20px;
+	left: 20px;
+	z-index: 99;
+}
+.btn {
+	display: inline-block;
+	padding: 5px 10px;
+	background: rgba(255, 255, 255, 0.6);
+	color: #000;
+	text-decoration: none;
+	cursor: pointer;
+}
