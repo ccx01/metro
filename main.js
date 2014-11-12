@@ -12,7 +12,7 @@
 			tpl: 用来拼装json的模板
 		*/
 
-		this.grid = {
+		this.box_type = {
 			b1: {
 				w: 1,
 				h: 1
@@ -36,8 +36,73 @@
 		this.container = config.container || document.querySelector('#metro');
 		this.box_h = this.box_w = this.container.offsetWidth / this.col;
 		this.order = config.order || "rand";
-		this.animation = config.animation || false;
+
+		// map
+		// invisible
+		this.map = [];
+		this.lost_box_row = 0;
 	}
+
+	metro.prototype.packing = function (type) {
+		//拼装box
+		var packed = 0;
+		var box = this.box_type[type];
+		var x = this.lost_box_row;
+		var map = this.map;
+		while (!packed) {
+			map[x] = map[x] || [];
+			for (var y = 0; y < this.col; y++) {
+				packed = 1;
+				if (y > (this.col - box.w)) {
+					packed = 0;
+				} else {
+					for (var i = 0; i < box.h; i++) {
+						map[x + i] = map[x + i] || [];
+						for (var j = 0; j < box.w; j++) {
+							if (map[x + i][y + j]) {
+								packed = 0;
+							}
+						}
+					}
+				}
+
+				this.map = map;
+
+				if (packed) {
+					for (var i = 0; i < box.h; i++) {
+						for (var j = 0; j < box.w; j++) {
+							map[x + i][y + j] = 1;
+						}
+					}
+
+					var style = {
+						"top": this.box_h * x + "px",
+						"left": this.box_w * y + "px",
+						"width": this.box_w * box.w + "px",
+						"height": this.box_h * box.h + "px"
+					}
+					return style;
+				}
+			}
+			x++;
+		}
+	}
+
+	/* relayout */
+	metro.prototype.relayout = function() {
+		var boxes = document.querySelector("#metro").childNodes;
+		var style = {};
+		this.lost_box_row = 0;
+		this.map = [];
+		for (var i = 0, len = boxes.length; i < len; i++) {
+			if(boxes[i].nodeType == 1) {
+				style = this.packing(genBox("rand"));
+				boxes[i].setStyle(style);
+			}
+		}
+		this.lost_box_row = getLostBoxRow(this.lost_box_row, this.col, this.map) || this.lost_box_row;
+	}
+
 	metro.prototype.init = function() {
 		this.col = Math.max(this.col, 2); //min-col: 2
 		this.row = 0;
@@ -45,6 +110,7 @@
 		this.box_h = this.box_w = this.container.offsetWidth / this.col;
 		this.container.innerHTML = '';
 	}
+
 	metro.prototype.loadBoxes = function(mode, json) {
 
 		switch (mode) {
@@ -56,106 +122,38 @@
 							// this.container.appendHTML(box_html);
 							break;*/
 		}
-		if (this.animation) {
-			// 有动画的拼装方式
-		} else {
-			boxHtml(this, json);
-		}
-	}
-	metro.prototype.defineBox = function(name, w, h) {
-		this.grid[name] = {
-			w: w,
-			h: h
-		}
-	}
-	metro.prototype.order = function(layout) {
-		this.order = layout;
-	}
 
-	/* relayout */
-	/*metro.prototype.relayout = function() {
-		var boxes = document.querySelector("#metro").childNodes;
-		var json = {};
-		this.row = 0;
-		for (var i = 0, len = boxes.length; i < len; i++) {
-			if(boxes[i].nodeType == 1) {
-				json["box"] = "b1";
-				json = packing(this, json);
-				boxes[i].style.top = json["top"];
-				boxes[i].style.left = json["left"];
-				boxes[i].style.width = json["width"];
-				boxes[i].style.height = json["height"];
-				console.log(boxes[i]);
-			}
-		}
-	}*/
-
-
-	function boxHtml(self, json, tpl) {
 		// 通过模板生成方块html
 		var tpl = tpl || document.querySelector("#box-tpl").innerHTML;
 		var html = "";
 		var data = "";
+		var box = "b1";
 		for (var i = 0, len = json.length; i < len; i++) {
-			genBox(self.order, json[i]);
-			data = packing(self, json[i]);
+			box = genBox(this.order, json[i]);
+			data = this.packing(box);
+			data["box"] = box;
 			html += tplEngine(tpl, data);
 		}
-		self.container.appendHTML(html);
-		self.row = missingBox(self.row, self.col, self.box) || self.row;
+		this.container.appendHTML(html);
+		this.lost_box_row = getLostBoxRow(this.lost_box_row, this.col, this.map) || this.lost_box_row;
 	}
 
-	function packing(self, json) {
-		/***
-		self: 本体
-		json: 需要拼装的数据
-		***/
-		//拼装json位置
-		var packed = 0;
-		var grid = self.grid[json.box];
-		var x = self.row;
-		var box = self.box;
-		while (!packed) {
-			box[x] = box[x] || [];
-			for (var y = 0; y < self.col; y++) {
-				packed = 1;
-				if (y > (self.col - grid.w)) {
-					packed = 0;
-				} else {
-					for (var i = 0; i < grid.h; i++) {
-						box[x + i] = box[x + i] || [];
-						for (var j = 0; j < grid.w; j++) {
-							if (box[x + i][y + j]) {
-								packed = 0;
-							}
-						}
-					}
-				}
-
-				self.box = box;
-
-				if (packed) {
-					for (var i = 0; i < grid.h; i++) {
-						for (var j = 0; j < grid.w; j++) {
-							box[x + i][y + j] = 1;
-						}
-					}
-					json.top = self.box_h * x;
-					json.left = self.box_w * y;
-					json.width = self.box_w * grid.w;
-					json.height = self.box_h * grid.h;
-					return json;
-				}
-			}
-			x++;
+	metro.prototype.defineBox = function(name, w, h) {
+		this.box_type[name] = {
+			w: w,
+			h: h
 		}
 	}
 
-	function missingBox(row, col, box) {
+	metro.prototype.order = function(layout) {
+		this.order = layout;
+	}
+
+	function getLostBoxRow(row, col, map) {
 		//	计算未填充的方格
-		for (var i = row; i < box.length; i++) {
+		for (var i = row; i < map.length; i++) {
 			for (var j = 0; j < col; j++) {
-				if (!box[i][j]) {
+				if (!map[i][j]) {
 					return i;
 				}
 			}
@@ -166,16 +164,18 @@
 		if (mode == "rand") {
 			//生成随机方块
 			var rand = Math.random();
-			json["box"] = "b1";
-			(rand < 0.9) && (json["box"] = "b2");
-			(rand < 0.8) && (json["box"] = "b3");
-			(rand < 0.7) && (json["box"] = "b4");
-			(rand < 0.6) && (json["box"] = "b5");
-			(rand < 0.5) && (json["box"] = "b6");
-			(rand < 0.4) && (json["box"] = "b7");
-			(rand < 0.3) && (json["box"] = "b8");
-			(rand < 0.2) && (json["box"] = "b9");
-			(rand < 0.1) && (json["box"] = "b1");
+			var box_type = "b1";
+			(rand < 0.9) && (box_type = "b2");
+			(rand < 0.8) && (box_type = "b3");
+			(rand < 0.7) && (box_type = "b4");
+			(rand < 0.6) && (box_type = "b5");
+			(rand < 0.5) && (box_type = "b6");
+			(rand < 0.4) && (box_type = "b7");
+			(rand < 0.3) && (box_type = "b8");
+			(rand < 0.2) && (box_type = "b9");
+			(rand < 0.1) && (box_type = "b1");
+
+			return box_type;
 		}
 	}
 
@@ -195,6 +195,12 @@
 			i++;
 		}
 		this.appendChild(fragment);
+	}
+
+	Object.prototype.setStyle = function (style) {
+		for(var i in style) {
+			this.style[i] = style[i];
+		}
 	}
 
 	function tplEngine(tpl, data) {
@@ -240,14 +246,14 @@ window.onresize = function() {
 	clearTimeout(t);
 	t = setTimeout(function() {
 		front.col = document.body.offsetWidth / responsive | 0;
-		front.loadBoxes("init", json);
+		// front.loadBoxes("init", json);
+		front.relayout();
 	}, 100);
 }
 
 document.querySelector("#init").onclick = function() {
-	front.loadBoxes("init", json);
+	front.relayout();
 }
 document.querySelector("#add").onclick = function() {
 	front.loadBoxes("add", json);
-	front.relayout();
 }
