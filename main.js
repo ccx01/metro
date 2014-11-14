@@ -63,8 +63,8 @@
 					}
 
 					var style = {
-						"top": this.box_h * x + "px",
-						"left": this.box_w * y + "px",
+						"top": this.box_h * x + this.container.offsetTop + "px",
+						"left": this.box_w * y + this.container.offsetLeft + "px",
 						"width": this.box_w * box.w + "px",
 						"height": this.box_h * box.h + "px"
 					}
@@ -92,16 +92,10 @@
 
 	/* resize */
 	metro.prototype.resize = function() {
-		var _this = this;
-		var responsive = _this.container.offsetWidth / _this.col | 0;
-		var t = setTimeout(function(){}, 1000);
-		window.onresize = function() {
-			clearTimeout(t);
-			t = setTimeout(function() {
-				_this.col = _this.container.offsetWidth / responsive | 0;
-				_this.relayout();
-			}, 100);
-		}
+		var responsive = this.container.offsetWidth / this.col | 0;
+		this.col = this.container.offsetWidth / responsive | 0;
+		this.box_h = this.box_w = this.container.offsetWidth / this.col;
+		this.relayout();
 	}
 
 	metro.prototype.loadBoxes = function(mode, json) {
@@ -193,12 +187,49 @@ var json = [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, 
 // var json = [{},{}];
 // var container = document.querySelector('#front');
 // var tpl = document.querySelector("#box-tpl").innerHTML;
-var front = new metro(config);
-/*front.defineBox("b1", 1, 1);
+
+var $metro = document.querySelector("#metro");
+
+var m1 = document.createElement("div");
+	m1.className = "m1";
+	m1.style["width"] = "50%";
+	$metro.appendChild(m1);
+var c1 = {
+	"container": m1,
+	"col": 10
+}
+
+var m2 = document.createElement("div");
+	m2.className = "m2";
+	m2.style["width"] = "50%";
+	$metro.appendChild(m2);
+var c2 = {
+	"container": m2,
+	"col": 10
+}
+
+var m1f = new metro(c1);
+var m2f = new metro(c2);
+
+m1f.loadBoxes("init", json);
+m2f.loadBoxes("init", json);
+
+/*var front = new metro(c1);
+front.defineBox("b1", 1, 1);
 front.defineBox("b2", 2, 1);
 front.defineBox("b3", 1, 2);
-front.defineBox("b4", 2, 2);*/
-front.loadBoxes("init", json);
+front.defineBox("b4", 2, 2);
+front.loadBoxes("init", json);*/
+
+window.onresize = function() {
+	var t;
+	clearTimeout(t);
+	t = setTimeout(function() {
+		m1f.resize();
+		m2f.resize();
+	}, 100);
+}
+
 
 document.querySelector("#init").onclick = function() {
 	front.loadBoxes("init", json);

@@ -6,16 +6,11 @@ body {
 	font:14px/1.5em "微软雅黑",microsoft yahei,SimHei,sans-serif;
 	background: rgba(0, 0, 0, 0.8);
 }
-#stage {
-	width:100%;
-	overflow:hidden
-}
-#front {
-	margin-right: 20px;
-	-webkit-transition:0.3s;
-	-moz-transition:0.3s;
-	transition:0.3s;
-	position:relative;
+#metro > div {
+	float: left;
+	width: 50%;
+	height: 100%;
+	min-height: 500px;
 }
 .wrap {
 	width:100%;
